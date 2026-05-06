@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Spend Wise</title>
+    <link rel="icon" href="/assets/img/favicon-v2.ico" />
+    <link rel="manifest" href="/assets/manifest/manifest.json" />
+    <meta name="theme-color" content="#0A0F1A" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Spend Wise" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <button id="installBtn" class="install-btn">Instalar App</button>
+    <script>
+      window.addEventListener("error", function (event) {
+        var root = document.getElementById("root");
+        if (!root || root.childElementCount) return;
+        root.innerHTML = '<div style="min-height:100vh;background:#0A0F1A;color:#e2e8f0;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px"><div style="max-width:520px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.08);border-radius:14px;padding:18px"><h1 style="font-size:20px;margin:0 0 8px;color:#F87171">Erro ao abrir o Spend Wise</h1><p style="font-size:14px;line-height:1.4;margin:0 0 10px">Atualize a pagina. Se continuar, envie este erro:</p><pre style="white-space:pre-wrap;font-size:12px;color:#fecaca">' + String(event.message || "Erro desconhecido").replace(/[<>&]/g, function (c) { return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c]; }) + '</pre></div></div>';
+      });
+      window.addEventListener("unhandledrejection", function (event) {
+        var root = document.getElementById("root");
+        if (!root || root.childElementCount) return;
+        var msg = event.reason && (event.reason.message || event.reason.toString && event.reason.toString()) || "Falha inesperada";
+        root.innerHTML = '<div style="min-height:100vh;background:#0A0F1A;color:#e2e8f0;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px"><div style="max-width:520px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.08);border-radius:14px;padding:18px"><h1 style="font-size:20px;margin:0 0 8px;color:#F87171">Erro ao abrir o Spend Wise</h1><p style="font-size:14px;line-height:1.4;margin:0 0 10px">Atualize a pagina. Se continuar, envie este erro:</p><pre style="white-space:pre-wrap;font-size:12px;color:#fecaca">' + String(msg).replace(/[<>&]/g, function (c) { return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c]; }) + '</pre></div></div>';
+      });
+    </script>
+    <script type="module" src="/src/main.jsx"></script>
+    <script src="/assets/js/pwa.js"></script>
+  </body>
+</html>

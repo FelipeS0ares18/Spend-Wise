@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Setup Node
+        uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm.cmd ci
+
+      - name: Run unit and UI tests
+        run: npm.cmd run test:run
+
+      - name: Typecheck
+        run: npm.cmd run typecheck
+
+      - name: Build
+        run: npm.cmd run build
+
+      - name: Verify production index
+        run: node verify-index.js
+
+      - name: Audit dependencies
+        run: npm.cmd audit --audit-level=low

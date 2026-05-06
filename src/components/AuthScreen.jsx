@@ -62,8 +62,11 @@ function AuthScreen() {
     setOk("");
     setBusy(true);
     try {
-      await authApi.sendPasswordResetEmail(auth, cleanEmail);
-      setOk("Enviamos um link de recuperacao para " + cleanEmail + ".");
+      await authApi.sendPasswordResetEmail(auth, cleanEmail, {
+        url: window.location.origin,
+        handleCodeInApp: false
+      });
+      setOk("Se existir uma conta com esse email, enviaremos um link de recuperacao para " + cleanEmail + ".");
     } catch (e) {
       setErr(messageFor(e, "Erro ao enviar recuperacao"));
     } finally {

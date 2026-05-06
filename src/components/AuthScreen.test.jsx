@@ -70,8 +70,14 @@ describe("AuthScreen", () => {
     fireEvent.change(screen.getByPlaceholderText("seu@email.com"), { target: { value: "felipe@test.com" } });
     fireEvent.click(screen.getByRole("button", { name: /Esqueci minha senha/i }));
 
-    await waitFor(() => expect(authApi.sendPasswordResetEmail).toHaveBeenCalledWith({}, "felipe@test.com"));
-    expect(screen.getByText(/Enviamos um link/i)).toBeInTheDocument();
+    await waitFor(() =>
+      expect(authApi.sendPasswordResetEmail).toHaveBeenCalledWith(
+        {},
+        "felipe@test.com",
+        expect.objectContaining({ handleCodeInApp: false })
+      )
+    );
+    expect(screen.getByText(/Se existir uma conta/i)).toBeInTheDocument();
   });
 
   it("requires email before sending password reset", () => {

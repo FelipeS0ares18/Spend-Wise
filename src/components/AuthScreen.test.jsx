@@ -7,6 +7,7 @@ import { AuthScreen } from "./AuthScreen";
 const { authApi } = vi.hoisted(() => ({
   authApi: {
     createUserWithEmailAndPassword: vi.fn(async () => ({ user: {} })),
+    sendPasswordResetEmail: vi.fn(async () => {}),
     signInWithEmailAndPassword: vi.fn(async () => ({})),
     updateProfile: vi.fn(async () => {})
   }
@@ -61,5 +62,24 @@ describe("AuthScreen", () => {
 
     await waitFor(() => expect(authApi.createUserWithEmailAndPassword).toHaveBeenCalledWith({}, "felipe@test.com", "123456"));
     expect(authApi.updateProfile).toHaveBeenCalledWith(createdUser, { displayName: "Felipe Soares" });
+  });
+
+  it("sends a password reset email from the login screen", async () => {
+    render(<AuthScreen />);
+
+    fireEvent.change(screen.getByPlaceholderText("seu@email.com"), { target: { value: "felipe@test.com" } });
+    fireEvent.click(screen.getByRole("button", { name: /Esqueci minha senha/i }));
+
+    await waitFor(() => expect(authApi.sendPasswordResetEmail).toHaveBeenCalledWith({}, "felipe@test.com"));
+    expect(screen.getByText(/Enviamos um link/i)).toBeInTheDocument();
+  });
+
+  it("requires email before sending password reset", () => {
+    render(<AuthScreen />);
+
+    fireEvent.click(screen.getByRole("button", { name: /Esqueci minha senha/i }));
+
+    expect(screen.getByText(/Informe seu email para recuperar a senha/i)).toBeInTheDocument();
+    expect(authApi.sendPasswordResetEmail).not.toHaveBeenCalled();
   });
 });

@@ -18,6 +18,7 @@ import {
   createUserWithEmailAndPassword,
   getAuth,
   onAuthStateChanged,
+  sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signOut,
   updateProfile
@@ -127,6 +128,7 @@ function createE2eFirebase() {
         cb(fakeAuth.currentUser);
         return () => listeners.delete(cb);
       },
+      sendPasswordResetEmail: async () => {},
       signInWithEmailAndPassword: async (_auth: unknown, email: string) => ({ user: setCurrentUser(email) }),
       signOut: async () => {
         fakeAuth.currentUser = null;
@@ -150,7 +152,7 @@ const realFirebase = e2eFirebase
         db: getFirestore(realApp),
         auth: getAuth(realApp),
         fs: { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDocs, getDoc, setDoc, query, where, arrayUnion },
-        authApi: { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile }
+        authApi: { createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile }
       };
     })();
 const firebaseRuntime = (e2eFirebase || realFirebase)!;

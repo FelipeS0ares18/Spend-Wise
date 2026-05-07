@@ -241,16 +241,18 @@ function App() {
   }
 
   async function saveOnboardingAnswers(nextAnswers=onboardingAnswers){
-    if(!user)return;
+    if(!user)return false;
     const answers={...onboardingAnswers,...nextAnswers};
     setOnboardingAnswers(answers);
     setSync("saving");
     try{
       await userRepo.saveOnboardingAnswers(user,answers);
       setSync("ok");
+      return true;
     }catch(e){
       setSync("err");
       alert("Erro ao salvar onboarding: "+e.message);
+      return false;
     }
   }
 

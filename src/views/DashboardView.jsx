@@ -1,9 +1,16 @@
+import { useState } from "react";
 import { MONTHS, fmt, pct, Bar, OnboardingCard, CommercialInsightsGrid, EmptyState, TxRow } from "../components/appPrimitives";
 
 export function DashboardView({ctx}) {
   const { mobile, theme, light, userName, selMonth, selYear, now, balance, invites, setView, setShowQuickEntry, pendingShopping, showOnboarding, onboardingSteps, onboardingProgress, hideOnboarding, runOnboardingAction, onboardingAnswers, setOnboardingAnswers, saveOnboardingAnswers, financialSpace, financeHealth, financeInsights, income, expense, pending, shortcuts, launchShortcut, topCats, maxCat, goals, monthTxs, togglePaid, setEditing, setShowTxForm, deleteTx, openChat } = ctx;
+  const [contextStatus,setContextStatus]=useState("");
   const onboardingInput = {background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.12)",borderRadius:9,padding:"10px 12px",color:theme.text,fontSize:13,outline:"none",width:"100%"};
-  const setAnswer=(key,value)=>setOnboardingAnswers({...onboardingAnswers,[key]:value});
+  const setAnswer=(key,value)=>{setContextStatus("");setOnboardingAnswers({...onboardingAnswers,[key]:value});};
+  async function handleSaveContext(){
+    setContextStatus("saving");
+    const ok=await saveOnboardingAnswers(onboardingAnswers);
+    setContextStatus(ok?"saved":"error");
+  }
   return <div className="fade">
           <div style={{marginBottom:18}}>
             <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:mobile?20:26,color:theme.text}}>{financialSpace?.name||"Spend Wise"}</h1>
@@ -28,7 +35,11 @@ export function DashboardView({ctx}) {
                 <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:theme.text,marginBottom:4}}>Configure seu espaco</h3>
                 <p style={{color:light?"#334155":"#64748b",fontSize:12,lineHeight:1.4}}>Essas respostas personalizam os insights e deixam o Spend Wise com cara de central financeira, nao so lista de gastos.</p>
               </div>
-              <button onClick={()=>saveOnboardingAnswers()} style={{border:"none",borderRadius:9,padding:"10px 13px",background:"#6EE7B722",color:"#6EE7B7",fontWeight:700,cursor:"pointer",fontSize:12}}>Salvar contexto</button>
+              <div style={{display:"flex",alignItems:mobile?"stretch":"center",gap:8,flexDirection:mobile?"column":"row"}}>
+                {contextStatus==="saved"&&<span style={{color:"#6EE7B7",fontSize:12,fontWeight:700}}>Contexto salvo</span>}
+                {contextStatus==="error"&&<span style={{color:"#F87171",fontSize:12,fontWeight:700}}>Nao foi possivel salvar</span>}
+                <button onClick={handleSaveContext} disabled={contextStatus==="saving"} style={{border:"none",borderRadius:9,padding:"10px 13px",background:contextStatus==="saving"?"rgba(255,255,255,.08)":"#6EE7B722",color:contextStatus==="saving"?theme.nav:"#6EE7B7",fontWeight:700,cursor:contextStatus==="saving"?"wait":"pointer",fontSize:12}}>{contextStatus==="saving"?"Salvando...":contextStatus==="saved"?"Salvo":"Salvar contexto"}</button>
+              </div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(4,1fr)",gap:10}}>
               <label style={{display:"grid",gap:6,fontSize:12,color:theme.nav}}>Renda mensal

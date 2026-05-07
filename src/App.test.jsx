@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import "@testing-library/jest-dom/vitest";
 import { render, screen, waitFor } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import App from "./App";
 
 const { user } = vi.hoisted(() => ({
@@ -20,7 +20,9 @@ vi.mock("./services/firebase", () => {
       }),
       signOut: vi.fn(async () => {}),
       updateProfile: vi.fn(async () => {}),
+      confirmPasswordReset: vi.fn(async () => {}),
       createUserWithEmailAndPassword: vi.fn(async () => ({ user })),
+      verifyPasswordResetCode: vi.fn(async () => "felipe@test.com"),
       signInWithEmailAndPassword: vi.fn(async () => ({ user }))
     },
     fs: {
@@ -45,10 +47,22 @@ vi.mock("./services/firebase", () => {
 });
 
 describe("App smoke", () => {
+  afterEach(() => {
+    window.history.replaceState({}, "", "/");
+  });
+
   it("renders the authenticated shell without initialization errors", async () => {
     render(<App />);
 
     await waitFor(() => expect(screen.getByText("Spend Wise")).toBeInTheDocument());
     expect(screen.queryByText(/Erro ao abrir o Spend Wise/i)).not.toBeInTheDocument();
+  });
+
+  it("prioritizes the password reset screen even when a user is logged in", async () => {
+    window.history.replaceState({}, "", "/?mode=resetPassword&oobCode=reset-mobile");
+    render(<App />);
+
+    expect(await screen.findByText(/Criar nova senha/i)).toBeInTheDocument();
+    expect(screen.queryByText(/Transações Recentes/i)).not.toBeInTheDocument();
   });
 });

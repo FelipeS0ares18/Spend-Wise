@@ -47,6 +47,7 @@ import {
   Modal,
   ModalCard,
   AuthScreen,
+  PasswordResetScreen,
   TxForm,
   QuickEntryForm,
   GoalForm,
@@ -80,8 +81,11 @@ const ShortcutsView = lazy(() => import("./views/ShortcutsView").then(m => ({ de
 const TransactionsView = lazy(() => import("./views/TransactionsView").then(m => ({ default: m.TransactionsView })));
 
 function App() {
+  const query = new URLSearchParams(window.location.search);
+  const resetCode = query.get("mode") === "resetPassword" ? query.get("oobCode") : "";
   const width  = useWidth();
   const mobile = width <= 768;
+  if (resetCode) return <PasswordResetScreen actionCode={resetCode}/>;
 
   const [user,      setUser]      = useState(null);
   const [authDone,  setAuthDone]  = useState(false);

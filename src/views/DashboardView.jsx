@@ -1,14 +1,20 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { MONTHS, fmt, pct, Bar, OnboardingCard, CommercialInsightsGrid, EmptyState, TxRow } from "../components/appPrimitives";
 
 export function DashboardView({ctx}) {
   const { mobile, theme, light, userName, selMonth, selYear, now, balance, invites, setView, setShowQuickEntry, pendingShopping, showOnboarding, onboardingSteps, onboardingProgress, hideOnboarding, runOnboardingAction, onboardingAnswers, setOnboardingAnswers, saveOnboardingAnswers, financialSpace, financeHealth, financeInsights, income, expense, pending, shortcuts, launchShortcut, topCats, maxCat, goals, monthTxs, togglePaid, setEditing, setShowTxForm, deleteTx, openChat } = ctx;
   const [contextStatus,setContextStatus]=useState("");
+  const [contextTouched,setContextTouched]=useState(false);
+  const [contextDismissed,setContextDismissed]=useState(false);
   const onboardingInput = {background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.12)",borderRadius:9,padding:"10px 12px",color:theme.text,fontSize:13,outline:"none",width:"100%"};
-  const setAnswer=(key,value)=>{setContextStatus("");setOnboardingAnswers({...onboardingAnswers,[key]:value});};
+  const setAnswer=(key,value)=>{setContextTouched(true);setContextStatus("");setOnboardingAnswers({...onboardingAnswers,[key]:value});};
+  const contextComplete=!!(onboardingAnswers.incomeRange&&onboardingAnswers.mainGoal&&onboardingAnswers.usesCards&&onboardingAnswers.sharesFinance);
+  const showContextSetup=showOnboarding&&!contextDismissed;
+  useEffect(()=>{if(contextComplete&&!contextTouched)setContextDismissed(true);},[contextComplete,contextTouched]);
   async function handleSaveContext(){
     setContextStatus("saving");
     const ok=await saveOnboardingAnswers(onboardingAnswers);
+    if(ok&&contextComplete)setContextDismissed(true);
     setContextStatus(ok?"saved":"error");
   }
   return <div className="fade">
@@ -29,7 +35,7 @@ export function DashboardView({ctx}) {
             </div>
           </div>
           {showOnboarding&&<OnboardingCard steps={onboardingSteps} progress={onboardingProgress} onSkip={hideOnboarding} onAction={runOnboardingAction} light={light} theme={theme}/>}
-          {showOnboarding&&<div className="card" style={{marginBottom:mobile?14:18}}>
+          {showContextSetup&&<div className="card" style={{marginBottom:mobile?14:18}}>
             <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:mobile?"flex-start":"center",flexDirection:mobile?"column":"row",marginBottom:14}}>
               <div>
                 <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:theme.text,marginBottom:4}}>Configure seu espaco</h3>
@@ -38,7 +44,7 @@ export function DashboardView({ctx}) {
               <div style={{display:"flex",alignItems:mobile?"stretch":"center",gap:8,flexDirection:mobile?"column":"row"}}>
                 {contextStatus==="saved"&&<span style={{color:"#6EE7B7",fontSize:12,fontWeight:700}}>Contexto salvo</span>}
                 {contextStatus==="error"&&<span style={{color:"#F87171",fontSize:12,fontWeight:700}}>Nao foi possivel salvar</span>}
-                <button onClick={handleSaveContext} disabled={contextStatus==="saving"} style={{border:"none",borderRadius:9,padding:"10px 13px",background:contextStatus==="saving"?"rgba(255,255,255,.08)":"#6EE7B722",color:contextStatus==="saving"?theme.nav:"#6EE7B7",fontWeight:700,cursor:contextStatus==="saving"?"wait":"pointer",fontSize:12}}>{contextStatus==="saving"?"Salvando...":contextStatus==="saved"?"Salvo":"Salvar contexto"}</button>
+                <button onClick={handleSaveContext} disabled={contextStatus==="saving"||!contextComplete} style={{border:"none",borderRadius:9,padding:"10px 13px",background:contextStatus==="saving"||!contextComplete?"rgba(255,255,255,.08)":"#6EE7B722",color:contextStatus==="saving"||!contextComplete?theme.nav:"#6EE7B7",fontWeight:700,cursor:contextStatus==="saving"?"wait":!contextComplete?"not-allowed":"pointer",fontSize:12}}>{contextStatus==="saving"?"Salvando...":!contextComplete?"Complete os campos":contextStatus==="saved"?"Salvo":"Salvar contexto"}</button>
               </div>
             </div>
             <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(4,1fr)",gap:10}}>

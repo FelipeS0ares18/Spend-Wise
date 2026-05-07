@@ -4,6 +4,10 @@
     ::-webkit-scrollbar { width: 4px; }
     ::-webkit-scrollbar-thumb { background: #ffffff22; border-radius: 4px; }
     input, select, button { font-family: 'DM Sans', sans-serif; }
+    select { color-scheme: dark; }
+    select option { background: #111827; color: #e2e8f0; }
+    body[data-theme="light"] select { color-scheme: light; }
+    body[data-theme="light"] select option { background: #ffffff; color: #0f172a; }
     input[type=date]::-webkit-calendar-picker-indicator { filter: invert(0.5); }
     @keyframes spin    { to { transform: rotate(360deg); } }
     @keyframes fadeIn  { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }

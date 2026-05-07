@@ -6,10 +6,12 @@ import { AuthScreen } from "./AuthScreen";
 
 const { authApi } = vi.hoisted(() => ({
   authApi: {
+    confirmPasswordReset: vi.fn(async () => {}),
     createUserWithEmailAndPassword: vi.fn(async () => ({ user: {} })),
     sendPasswordResetEmail: vi.fn(async () => {}),
     signInWithEmailAndPassword: vi.fn(async () => ({})),
-    updateProfile: vi.fn(async () => {})
+    updateProfile: vi.fn(async () => {}),
+    verifyPasswordResetCode: vi.fn(async () => "felipe@test.com")
   }
 }));
 
@@ -21,6 +23,7 @@ vi.mock("../services/firebase", () => ({
 describe("AuthScreen", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.history.replaceState({}, "", "/");
   });
 
   afterEach(() => {
@@ -87,5 +90,26 @@ describe("AuthScreen", () => {
 
     expect(screen.getByText(/Informe seu email para recuperar a senha/i)).toBeInTheDocument();
     expect(authApi.sendPasswordResetEmail).not.toHaveBeenCalled();
+  });
+
+  it("renders a custom password reset screen and confirms a new password", async () => {
+    window.history.replaceState({}, "", "/?mode=resetPassword&oobCode=abc123");
+    render(<AuthScreen />);
+
+    expect(await screen.findByText(/Conta: felipe@test.com/i)).toBeInTheDocument();
+    fireEvent.change(screen.getByPlaceholderText("minimo 6 caracteres"), { target: { value: "nova123" } });
+    fireEvent.change(screen.getByPlaceholderText("repita a nova senha"), { target: { value: "nova123" } });
+    fireEvent.click(screen.getByRole("button", { name: /Redefinir senha/i }));
+
+    await waitFor(() => expect(authApi.confirmPasswordReset).toHaveBeenCalledWith({}, "abc123", "nova123"));
+    expect(screen.getByText(/Senha redefinida com sucesso/i)).toBeInTheDocument();
+  });
+
+  it("shows an error for expired password reset links", async () => {
+    authApi.verifyPasswordResetCode.mockRejectedValueOnce(new Error("expired"));
+    window.history.replaceState({}, "", "/?mode=resetPassword&oobCode=expired");
+    render(<AuthScreen />);
+
+    expect(await screen.findByText(/Link invalido ou expirado/i)).toBeInTheDocument();
   });
 });

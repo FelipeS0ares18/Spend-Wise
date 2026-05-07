@@ -1,10 +1,13 @@
 import { MONTHS, fmt, pct, Bar, OnboardingCard, CommercialInsightsGrid, EmptyState, TxRow } from "../components/appPrimitives";
 
 export function DashboardView({ctx}) {
-  const { mobile, theme, light, userName, selMonth, selYear, now, balance, invites, setView, setShowQuickEntry, pendingShopping, showOnboarding, onboardingSteps, onboardingProgress, hideOnboarding, runOnboardingAction, financeHealth, financeInsights, income, expense, pending, shortcuts, launchShortcut, topCats, maxCat, goals, monthTxs, togglePaid, setEditing, setShowTxForm, deleteTx, openChat } = ctx;
+  const { mobile, theme, light, userName, selMonth, selYear, now, balance, invites, setView, setShowQuickEntry, pendingShopping, showOnboarding, onboardingSteps, onboardingProgress, hideOnboarding, runOnboardingAction, onboardingAnswers, setOnboardingAnswers, saveOnboardingAnswers, financialSpace, financeHealth, financeInsights, income, expense, pending, shortcuts, launchShortcut, topCats, maxCat, goals, monthTxs, togglePaid, setEditing, setShowTxForm, deleteTx, openChat } = ctx;
+  const onboardingInput = {background:"rgba(255,255,255,.07)",border:"1px solid rgba(255,255,255,.12)",borderRadius:9,padding:"10px 12px",color:theme.text,fontSize:13,outline:"none",width:"100%"};
+  const setAnswer=(key,value)=>setOnboardingAnswers({...onboardingAnswers,[key]:value});
   return <div className="fade">
           <div style={{marginBottom:18}}>
-            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:mobile?20:26,color:theme.text}}>Olá, {userName} 👋</h1>
+            <h1 style={{fontFamily:"'Playfair Display',serif",fontSize:mobile?20:26,color:theme.text}}>{financialSpace?.name||"Spend Wise"}</h1>
+            <div style={{color:"#6EE7B7",fontSize:12,fontWeight:700,marginTop:3}}>Ola, {userName}</div>
             <p style={{color:light?"#334155":"#64748b",marginTop:4,fontSize:12}}>{selMonth===now.getMonth()&&selYear===now.getFullYear()?new Date().toLocaleDateString("pt-BR",{weekday:"long",day:"numeric",month:"long"}):MONTHS[selMonth]+" de "+selYear}</p>
             {mobile&&<div style={{marginTop:12,background:balance>=0?"rgba(110,231,183,.08)":"rgba(248,113,113,.08)",border:`1px solid ${balance>=0?"#6EE7B733":"#F8717133"}`,borderRadius:12,padding:"12px 16px",display:"flex",justifyContent:"space-between",alignItems:"center"}}>
               <span style={{fontSize:12,color:light?"#475569":"#888"}}>SALDO DO MÊS</span>
@@ -19,6 +22,52 @@ export function DashboardView({ctx}) {
             </div>
           </div>
           {showOnboarding&&<OnboardingCard steps={onboardingSteps} progress={onboardingProgress} onSkip={hideOnboarding} onAction={runOnboardingAction} light={light} theme={theme}/>}
+          {showOnboarding&&<div className="card" style={{marginBottom:mobile?14:18}}>
+            <div style={{display:"flex",justifyContent:"space-between",gap:12,alignItems:mobile?"flex-start":"center",flexDirection:mobile?"column":"row",marginBottom:14}}>
+              <div>
+                <h3 style={{fontFamily:"'Playfair Display',serif",fontSize:16,color:theme.text,marginBottom:4}}>Configure seu espaco</h3>
+                <p style={{color:light?"#334155":"#64748b",fontSize:12,lineHeight:1.4}}>Essas respostas personalizam os insights e deixam o Spend Wise com cara de central financeira, nao so lista de gastos.</p>
+              </div>
+              <button onClick={()=>saveOnboardingAnswers()} style={{border:"none",borderRadius:9,padding:"10px 13px",background:"#6EE7B722",color:"#6EE7B7",fontWeight:700,cursor:"pointer",fontSize:12}}>Salvar contexto</button>
+            </div>
+            <div style={{display:"grid",gridTemplateColumns:mobile?"1fr":"repeat(4,1fr)",gap:10}}>
+              <label style={{display:"grid",gap:6,fontSize:12,color:theme.nav}}>Renda mensal
+                <select value={onboardingAnswers.incomeRange||""} onChange={e=>setAnswer("incomeRange",e.target.value)} style={onboardingInput}>
+                  <option value="">Selecionar</option>
+                  <option value="ate-3k">Ate R$ 3 mil</option>
+                  <option value="3k-8k">R$ 3 mil a R$ 8 mil</option>
+                  <option value="8k-15k">R$ 8 mil a R$ 15 mil</option>
+                  <option value="15k-plus">Acima de R$ 15 mil</option>
+                </select>
+              </label>
+              <label style={{display:"grid",gap:6,fontSize:12,color:theme.nav}}>Objetivo principal
+                <select value={onboardingAnswers.mainGoal||""} onChange={e=>setAnswer("mainGoal",e.target.value)} style={onboardingInput}>
+                  <option value="">Selecionar</option>
+                  <option value="organizar">Organizar rotina</option>
+                  <option value="quitar">Quitar dividas</option>
+                  <option value="investir">Sobrar para investir</option>
+                  <option value="familia">Controlar familia/casal</option>
+                </select>
+              </label>
+              <label style={{display:"grid",gap:6,fontSize:12,color:theme.nav}}>Cartoes
+                <select value={onboardingAnswers.usesCards||""} onChange={e=>setAnswer("usesCards",e.target.value)} style={onboardingInput}>
+                  <option value="">Selecionar</option>
+                  <option value="sim">Uso cartao todo mes</option>
+                  <option value="parcelas">Tenho muitas parcelas</option>
+                  <option value="nao">Quase nao uso</option>
+                </select>
+              </label>
+              <label style={{display:"grid",gap:6,fontSize:12,color:theme.nav}}>Compartilhamento
+                <select value={onboardingAnswers.sharesFinance||""} onChange={e=>setAnswer("sharesFinance",e.target.value)} style={onboardingInput}>
+                  <option value="">Selecionar</option>
+                  <option value="solo">Uso sozinho</option>
+                  <option value="casal">Casal</option>
+                  <option value="familia">Familia</option>
+                  <option value="negocio">Pequeno negocio</option>
+                </select>
+              </label>
+            </div>
+          </div>}
           <CommercialInsightsGrid health={financeHealth} items={financeInsights} onOpen={setView} light={light} theme={theme}/>
           {/* KPIs */}
           <div style={{display:"grid",gridTemplateColumns:mobile?"1fr 1fr":"repeat(4,1fr)",gap:mobile?10:14,marginBottom:mobile?14:18}}>

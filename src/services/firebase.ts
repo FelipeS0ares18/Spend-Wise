@@ -17,6 +17,7 @@ import {
 import {
   createUserWithEmailAndPassword,
   confirmPasswordReset,
+  deleteUser,
   getAuth,
   onAuthStateChanged,
   sendPasswordResetEmail,
@@ -141,7 +142,8 @@ function createE2eFirebase() {
         user.displayName = value.displayName;
         if (fakeAuth.currentUser) fakeAuth.currentUser.displayName = value.displayName;
       },
-      verifyPasswordResetCode: async () => "felipe.e2e@test.com"
+      verifyPasswordResetCode: async () => "felipe.e2e@test.com",
+      deleteUser: async () => {}
     }
   };
 }
@@ -156,7 +158,7 @@ const realFirebase = e2eFirebase
         db: getFirestore(realApp),
         auth: getAuth(realApp),
         fs: { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDocs, getDoc, setDoc, query, where, arrayUnion },
-        authApi: { confirmPasswordReset, createUserWithEmailAndPassword, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, verifyPasswordResetCode }
+        authApi: { confirmPasswordReset, createUserWithEmailAndPassword, deleteUser, sendPasswordResetEmail, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile, verifyPasswordResetCode }
       };
     })();
 const firebaseRuntime = (e2eFirebase || realFirebase)!;

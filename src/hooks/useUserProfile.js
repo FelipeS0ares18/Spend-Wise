@@ -11,6 +11,7 @@ function useUserProfile({
   setProfilePhone,
   setWhatsappCode,
   setWhatsappConnectedPhone,
+  setOnboardingAnswers,
   setOnboardingHidden
 }) {
   useEffect(() => {
@@ -31,6 +32,7 @@ function useUserProfile({
         }
         if (data.whatsappConnectCode) setWhatsappCode(data.whatsappConnectCode);
         if (data.whatsappConnectedPhone) setWhatsappConnectedPhone(data.whatsappConnectedPhone);
+        if (data.onboardingAnswers) setOnboardingAnswers(data.onboardingAnswers);
         setOnboardingHidden(!!data.onboardingHidden);
 
         const localH = userRepo.getLocalHouseholdId(user);
@@ -73,6 +75,7 @@ function useUserProfile({
         const remoteData = snap.exists() ? snap.data() : {};
         const remote = remoteData.activeHouseholdId || "";
         if (remoteData.whatsappConnectedPhone) setWhatsappConnectedPhone(remoteData.whatsappConnectedPhone);
+        if (remoteData.onboardingAnswers) setOnboardingAnswers(remoteData.onboardingAnswers);
         setOnboardingHidden(!!remoteData.onboardingHidden);
         if (remote && remote !== householdId) {
           userRepo.setLocalHouseholdId(user, remote);

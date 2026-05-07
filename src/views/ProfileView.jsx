@@ -28,7 +28,10 @@ export function ProfileView({ ctx }) {
     generateWhatsappCode,
     sync,
     syncColor,
-    householdId
+    householdId,
+    exportAccountData,
+    sendPasswordResetFromProfile,
+    deleteAccount
   } = ctx;
 
   return (
@@ -71,6 +74,34 @@ export function ProfileView({ ctx }) {
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, borderBottom: "1px solid rgba(255,255,255,.06)", paddingBottom: 10 }}><span style={{ color: light ? "#334155" : "#64748b" }}>Status</span><span style={{ color: syncColor, fontFamily: "'DM Mono',monospace" }}>{sync === "saving" ? "salvando" : sync === "err" ? "erro" : "sincronizado"}</span></div>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, borderBottom: "1px solid rgba(255,255,255,.06)", paddingBottom: 10 }}><span style={{ color: light ? "#334155" : "#64748b" }}>Conta</span><span style={{ color: theme.nav, textAlign: "right" }}>{householdId ? "Compartilhada" : "Individual"}</span></div>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}><span style={{ color: light ? "#334155" : "#64748b" }}>ID</span><span style={{ color: theme.nav, textAlign: "right", fontSize: 11, wordBreak: "break-all" }}>{user.uid}</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="card" style={{ marginTop: mobile ? 12 : 14 }}>
+        <div style={{ display: "flex", flexDirection: mobile ? "column" : "row", justifyContent: "space-between", gap: 14, alignItems: mobile ? "stretch" : "center" }}>
+          <div>
+            <h3 style={{ fontFamily: "'Playfair Display',serif", fontSize: 17, color: theme.text, marginBottom: 6 }}>Administracao da conta</h3>
+            <div style={{ color: light ? "#334155" : "#64748b", fontSize: 12, lineHeight: 1.45 }}>Seguranca, portabilidade e encerramento da conta em um unico lugar.</div>
+          </div>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button onClick={sendPasswordResetFromProfile} style={{ padding: "10px 12px", borderRadius: 9, border: "none", background: "rgba(255,255,255,.06)", color: theme.nav, cursor: "pointer", fontSize: 12 }}>Redefinir senha</button>
+            <button onClick={exportAccountData} style={{ padding: "10px 12px", borderRadius: 9, border: "none", background: "#6EE7B722", color: "#6EE7B7", cursor: "pointer", fontSize: 12, fontWeight: 700 }}>Exportar dados</button>
+            <button onClick={deleteAccount} style={{ padding: "10px 12px", borderRadius: 9, border: "1px solid rgba(248,113,113,.35)", background: "rgba(248,113,113,.10)", color: "#F87171", cursor: "pointer", fontSize: 12 }}>Excluir conta</button>
+          </div>
+        </div>
+        <div style={{ display: "grid", gridTemplateColumns: mobile ? "1fr" : "repeat(3,1fr)", gap: 10, marginTop: 14 }}>
+          <div style={{ background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, padding: "11px 12px" }}>
+            <div style={{ color: theme.nav, fontSize: 12, marginBottom: 5 }}>Autenticacao</div>
+            <div style={{ color: light ? "#334155" : "#64748b", fontSize: 12 }}>O e-mail de redefinicao usa a tela personalizada do Spend Wise.</div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, padding: "11px 12px" }}>
+            <div style={{ color: theme.nav, fontSize: 12, marginBottom: 5 }}>Portabilidade</div>
+            <div style={{ color: light ? "#334155" : "#64748b", fontSize: 12 }}>O JSON exportado inclui perfil, base atual e estado financeiro carregado no app.</div>
+          </div>
+          <div style={{ background: "rgba(255,255,255,.045)", border: "1px solid rgba(255,255,255,.08)", borderRadius: 10, padding: "11px 12px" }}>
+            <div style={{ color: theme.nav, fontSize: 12, marginBottom: 5 }}>Encerramento</div>
+            <div style={{ color: light ? "#334155" : "#64748b", fontSize: 12 }}>O Firebase pode pedir login recente antes de excluir a conta.</div>
           </div>
         </div>
       </div>

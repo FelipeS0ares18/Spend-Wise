@@ -110,6 +110,9 @@ function App() {
   const [whatsappCode,setWhatsappCode]=useState("");
   const [whatsappConnectedPhone,setWhatsappConnectedPhone]=useState("");
   const [onboardingHidden,setOnboardingHidden]=useState(false);
+  const [onboardingAnswers,setOnboardingAnswers]=useState({incomeRange:"",mainGoal:"",usesCards:"",sharesFinance:""});
+  const [financialSpace,setFinancialSpace]=useState({name:"Meu espaco financeiro",role:"owner",currency:"BRL",periodStart:"1"});
+  const [spaceSaving,setSpaceSaving]=useState(false);
   const [ruleText,setRuleText]=useState("");
   const [ruleCategory,setRuleCategory]=useState("Outros");
   const now = new Date();
@@ -145,7 +148,7 @@ function App() {
   },[]);
 
   useUserProfile({
-    user,householdId,setHouseholdId,setProfileName,setProfilePhone,
+    user,householdId,setHouseholdId,setProfileName,setProfilePhone,setOnboardingAnswers,
     setWhatsappCode,setWhatsappConnectedPhone,setOnboardingHidden
   });
 
@@ -163,6 +166,15 @@ function App() {
   const categoryRulesRepo=createCategoryRulesRepository({fs,refs});
   const statementImportService=createStatementImportService({fs,refs});
   const monthlyClosingRepo=createMonthlyClosingRepository({fs,refs,pct});
+
+  useEffect(()=>{
+    if(!user)return;
+    const unsub=fs.onSnapshot(refs.ownerDoc(),snap=>{
+      const data=snap.exists?.() ? snap.data() : {};
+      if(data.financialSpace)setFinancialSpace(p=>({...p,...data.financialSpace}));
+    },e=>console.warn("Espaco financeiro indisponivel:",e));
+    return()=>unsub();
+  },[user,householdId]);
   const { sendInvite,answerInvite,refreshInvites,joinHouseholdByCode } = useHouseholdActions({
     user,householdId,joinCode,partnerEmail,householdRepo,setHouseholdId,
     setInvites,setJoinCode,setPartnerEmail,setSync,setView
@@ -201,6 +213,74 @@ function App() {
 
   async function logout(){
     await authApi.signOut(auth);
+  }
+
+  async function saveOnboardingAnswers(nextAnswers=onboardingAnswers){
+    if(!user)return;
+    const answers={...onboardingAnswers,...nextAnswers};
+    setOnboardingAnswers(answers);
+    setSync("saving");
+    try{
+      await userRepo.saveOnboardingAnswers(user,answers);
+      setSync("ok");
+    }catch(e){
+      setSync("err");
+      alert("Erro ao salvar onboarding: "+e.message);
+    }
+  }
+
+  async function saveFinancialSpace(nextSpace=financialSpace){
+    if(!user)return;
+    const clean={...financialSpace,...nextSpace,name:(nextSpace.name||financialSpace.name||"Meu espaco financeiro").trim()||"Meu espaco financeiro"};
+    setFinancialSpace(clean);
+    setSpaceSaving(true);
+    setSync("saving");
+    try{
+      await fs.setDoc(refs.ownerDoc(),{financialSpace:clean,financialSpaceUpdatedAtMs:Date.now()},{merge:true});
+      setSync("ok");
+    }catch(e){
+      setSync("err");
+      alert("Erro ao salvar espaco financeiro: "+e.message);
+    }
+    setSpaceSaving(false);
+  }
+
+  function exportAccountData(){
+    const payload={exportedAt:new Date().toISOString(),profile:{name:userName,email:user?.email||"",phone:profilePhone},financialSpace,transactions:txs,goals,shortcuts,recurring,cards,shopping,monthlyClosings:closings,categoryRules};
+    const blob=new Blob([JSON.stringify(payload,null,2)],{type:"application/json"});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement("a");
+    a.href=url;
+    a.download="spend-wise-dados.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  async function sendPasswordResetFromProfile(){
+    if(!user?.email)return;
+    setSync("saving");
+    try{
+      await authApi.sendPasswordResetEmail(auth,user.email,{url:window.location.origin,handleCodeInApp:false});
+      setSync("ok");
+      alert("Enviamos um link de redefinicao para "+user.email+".");
+    }catch(e){
+      setSync("err");
+      alert("Erro ao enviar redefinicao: "+e.message);
+    }
+  }
+
+  async function deleteAccount(){
+    if(!user)return;
+    const ok=window.confirm("Excluir sua conta de acesso? Esta acao pode exigir login recente e nao apaga dados compartilhados automaticamente.");
+    if(!ok)return;
+    setSync("saving");
+    try{
+      await authApi.deleteUser(user);
+      setSync("ok");
+    }catch(e){
+      setSync("err");
+      alert(e.code==="auth/requires-recent-login"?"Por seguranca, faca login novamente antes de excluir a conta.":"Erro ao excluir conta: "+e.message);
+    }
   }
 
   /* â”€â”€ derived â”€â”€ */
@@ -251,10 +331,11 @@ function App() {
   const financeHealth=buildFinanceHealth({income,expense,balance,pending,monthTxs,goals,recurring});
   const financeInsights=buildFinanceInsights({income,expense,balance,pending,monthTxs,recurring,goals,topCats,selMonth,selYear});
   const onboardingSteps=[
-    {id:"profile",icon:"1",title:"Completar perfil",body:"Nome e telefone ajudam no compartilhamento e no WhatsApp.",done:!!(profileName&&profileName.trim()),view:"profile"},
-    {id:"first-tx",icon:"2",title:"Primeiro lancamento",body:"Use texto, voz ou WhatsApp para registrar uma movimentacao.",done:txs.length>0,quick:true},
-    {id:"whatsapp",icon:"3",title:"Conectar WhatsApp",body:"Receba entradas pelo Twilio Sandbox enquanto validamos o produto.",done:!!whatsappConnectedPhone,view:"profile"},
-    {id:"goal",icon:"4",title:"Criar uma meta",body:"Mostre para onde o dinheiro deve ir, nao so onde ele foi gasto.",done:goals.length>0,view:"goals"}
+    {id:"context",icon:"1",title:"Contexto financeiro",body:"Informe objetivo, renda e uso de cartao para personalizar o app.",done:!!(onboardingAnswers.mainGoal&&onboardingAnswers.incomeRange),view:"dashboard"},
+    {id:"profile",icon:"2",title:"Completar perfil",body:"Nome e telefone ajudam no compartilhamento e no WhatsApp.",done:!!(profileName&&profileName.trim()),view:"profile"},
+    {id:"space",icon:"3",title:"Configurar espaco",body:"Defina nome, papel, moeda e inicio do periodo financeiro.",done:!!(financialSpace.name&&financialSpace.periodStart),view:"shared"},
+    {id:"first-tx",icon:"4",title:"Primeiro lancamento",body:"Use texto, voz ou WhatsApp para registrar uma movimentacao.",done:txs.length>0,quick:true},
+    {id:"goal",icon:"5",title:"Criar uma meta",body:"Mostre para onde o dinheiro deve ir, nao so onde ele foi gasto.",done:goals.length>0,view:"goals"}
   ];
   const onboardingProgress=Math.round(onboardingSteps.filter(s=>s.done).length/onboardingSteps.length*100);
   const showOnboarding=!onboardingHidden&&onboardingProgress<100;
@@ -277,6 +358,7 @@ function App() {
   const dashboardCtx={
     mobile,theme,light,userName,selMonth,selYear,now,balance,invites,setView,setShowQuickEntry,
     pendingShopping,showOnboarding,onboardingSteps,onboardingProgress,hideOnboarding,runOnboardingAction,
+    onboardingAnswers,setOnboardingAnswers,saveOnboardingAnswers,financialSpace,
     financeHealth,financeInsights,income,expense,pending,shortcuts,launchShortcut,topCats,maxCat,
     goals,monthTxs,togglePaid,setEditing,setShowTxForm,deleteTx,openChat
   };
@@ -318,17 +400,19 @@ function App() {
   };
   const sharedAccountCtx={
     mobile,theme,light,householdId,user,partnerEmail,setPartnerEmail,sendInvite,
-    joinCode,setJoinCode,joinHouseholdByCode,refreshInvites,invites,answerInvite
+    joinCode,setJoinCode,joinHouseholdByCode,refreshInvites,invites,answerInvite,
+    financialSpace,setFinancialSpace,saveFinancialSpace,spaceSaving
   };
   const profileCtx={
     mobile,theme,light,user,userName,profileName,setProfileName,profilePhone,setProfilePhone,
-    profileSaving,saveProfile,whatsappCode,generateWhatsappCode,sync,syncColor,householdId
+    profileSaving,saveProfile,whatsappCode,generateWhatsappCode,sync,syncColor,householdId,
+    exportAccountData,sendPasswordResetFromProfile,deleteAccount
   };
   const goalsCtx={
     mobile,theme,light,goals,showGoal,setShowGoal,saveGoal,setDepositGoal,deleteGoal
   };
   const reportCtx={
-    mobile,theme,light,selMonth,selYear,income,expense,balance,monthTxs,topCats
+    mobile,theme,light,selMonth,selYear,income,expense,balance,monthTxs,topCats,txs,goals,financialSpace
   };
 
   /* â”€â”€ guards â”€â”€ */

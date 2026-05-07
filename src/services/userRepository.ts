@@ -60,6 +60,10 @@ function createUserRepository({ db, fs, authApi }: { db: string; fs: UserFiresto
       this.setLocalProfilePhone(user, phone);
     },
 
+    async saveOnboardingAnswers(user: UserLike, answers: Record<string, unknown>) {
+      await fs.setDoc(userDoc(user), { onboardingAnswers: answers, onboardingAnswersUpdatedAtMs: Date.now() }, { merge: true });
+    },
+
     async saveWhatsappCode(user: UserLike, { code, phone, householdId }: { code: string; phone: string; householdId: string }) {
       await fs.setDoc(
         userDoc(user),

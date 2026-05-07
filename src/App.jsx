@@ -63,28 +63,53 @@ import {
   TxRow
 } from "./components/appPrimitives";
 
-const CalendarView = lazy(() => import("./views/CalendarView").then(m => ({ default: m.CalendarView })));
-const CardsView = lazy(() => import("./views/CardsView").then(m => ({ default: m.CardsView })));
-const ClosingView = lazy(() => import("./views/ClosingView").then(m => ({ default: m.ClosingView })));
-const DashboardView = lazy(() => import("./views/DashboardView").then(m => ({ default: m.DashboardView })));
-const GoalsView = lazy(() => import("./views/GoalsView").then(m => ({ default: m.GoalsView })));
-const ImportView = lazy(() => import("./views/ImportView").then(m => ({ default: m.ImportView })));
-const NotificationsView = lazy(() => import("./views/NotificationsView").then(m => ({ default: m.NotificationsView })));
-const ProfileView = lazy(() => import("./views/ProfileView").then(m => ({ default: m.ProfileView })));
-const RecurringView = lazy(() => import("./views/RecurringView").then(m => ({ default: m.RecurringView })));
-const ReportView = lazy(() => import("./views/ReportView").then(m => ({ default: m.ReportView })));
-const RulesView = lazy(() => import("./views/RulesView").then(m => ({ default: m.RulesView })));
-const SearchView = lazy(() => import("./views/SearchView").then(m => ({ default: m.SearchView })));
-const SharedAccountView = lazy(() => import("./views/SharedAccountView").then(m => ({ default: m.SharedAccountView })));
-const ShoppingView = lazy(() => import("./views/ShoppingView").then(m => ({ default: m.ShoppingView })));
-const ShortcutsView = lazy(() => import("./views/ShortcutsView").then(m => ({ default: m.ShortcutsView })));
-const TransactionsView = lazy(() => import("./views/TransactionsView").then(m => ({ default: m.TransactionsView })));
+function recoverStaleChunk(error) {
+  const message = String(error?.message || error || "");
+  const staleChunk =
+    message.includes("Failed to fetch dynamically imported module") ||
+    message.includes("Importing a module script failed") ||
+    message.includes("error loading dynamically imported module") ||
+    message.includes("ChunkLoadError");
+  if (!staleChunk) throw error;
+  const key = "spend-wise-stale-chunk-reload";
+  if (sessionStorage.getItem(key) === "1") throw error;
+  sessionStorage.setItem(key, "1");
+  const reload = () => window.location.replace(window.location.pathname + window.location.search + (window.location.search ? "&" : "?") + "refresh=" + Date.now());
+  if ("caches" in window) {
+    caches.keys().then(keys => Promise.all(keys.map(cacheKey => caches.delete(cacheKey)))).finally(reload);
+  } else {
+    reload();
+  }
+  return new Promise(() => {});
+}
+
+const lazyView = loader => lazy(() => loader().catch(recoverStaleChunk));
+
+const CalendarView = lazyView(() => import("./views/CalendarView").then(m => ({ default: m.CalendarView })));
+const CardsView = lazyView(() => import("./views/CardsView").then(m => ({ default: m.CardsView })));
+const ClosingView = lazyView(() => import("./views/ClosingView").then(m => ({ default: m.ClosingView })));
+const DashboardView = lazyView(() => import("./views/DashboardView").then(m => ({ default: m.DashboardView })));
+const GoalsView = lazyView(() => import("./views/GoalsView").then(m => ({ default: m.GoalsView })));
+const ImportView = lazyView(() => import("./views/ImportView").then(m => ({ default: m.ImportView })));
+const NotificationsView = lazyView(() => import("./views/NotificationsView").then(m => ({ default: m.NotificationsView })));
+const ProfileView = lazyView(() => import("./views/ProfileView").then(m => ({ default: m.ProfileView })));
+const RecurringView = lazyView(() => import("./views/RecurringView").then(m => ({ default: m.RecurringView })));
+const ReportView = lazyView(() => import("./views/ReportView").then(m => ({ default: m.ReportView })));
+const RulesView = lazyView(() => import("./views/RulesView").then(m => ({ default: m.RulesView })));
+const SearchView = lazyView(() => import("./views/SearchView").then(m => ({ default: m.SearchView })));
+const SharedAccountView = lazyView(() => import("./views/SharedAccountView").then(m => ({ default: m.SharedAccountView })));
+const ShoppingView = lazyView(() => import("./views/ShoppingView").then(m => ({ default: m.ShoppingView })));
+const ShortcutsView = lazyView(() => import("./views/ShortcutsView").then(m => ({ default: m.ShortcutsView })));
+const TransactionsView = lazyView(() => import("./views/TransactionsView").then(m => ({ default: m.TransactionsView })));
 
 function App() {
   const query = new URLSearchParams(window.location.search);
   const resetCode = query.get("mode") === "resetPassword" ? query.get("oobCode") : "";
   const width  = useWidth();
   const mobile = width <= 768;
+  useEffect(() => {
+    sessionStorage.removeItem("spend-wise-stale-chunk-reload");
+  }, []);
   if (resetCode) return <PasswordResetScreen actionCode={resetCode}/>;
 
   const [user,      setUser]      = useState(null);

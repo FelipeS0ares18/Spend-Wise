@@ -16,15 +16,39 @@
     <div id="root"></div>
     <button id="installBtn" class="install-btn">Instalar App</button>
     <script>
+      function recoverFromStaleChunk(message) {
+        var text = String(message || "");
+        var staleChunk =
+          text.indexOf("Failed to fetch dynamically imported module") >= 0 ||
+          text.indexOf("Importing a module script failed") >= 0 ||
+          text.indexOf("error loading dynamically imported module") >= 0 ||
+          text.indexOf("ChunkLoadError") >= 0;
+        if (!staleChunk) return false;
+        var key = "spend-wise-stale-chunk-reload";
+        if (sessionStorage.getItem(key) === "1") return false;
+        sessionStorage.setItem(key, "1");
+        if ("caches" in window) {
+          caches.keys().then(function (keys) {
+            return Promise.all(keys.map(function (cacheKey) { return caches.delete(cacheKey); }));
+          }).finally(function () {
+            window.location.replace(window.location.pathname + window.location.search + (window.location.search ? "&" : "?") + "refresh=" + Date.now());
+          });
+        } else {
+          window.location.replace(window.location.pathname + window.location.search + (window.location.search ? "&" : "?") + "refresh=" + Date.now());
+        }
+        return true;
+      }
       window.addEventListener("error", function (event) {
+        if (recoverFromStaleChunk(event.message || event.filename)) return;
         var root = document.getElementById("root");
         if (!root || root.childElementCount) return;
         root.innerHTML = '<div style="min-height:100vh;background:#0A0F1A;color:#e2e8f0;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px"><div style="max-width:520px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.08);border-radius:14px;padding:18px"><h1 style="font-size:20px;margin:0 0 8px;color:#F87171">Erro ao abrir o Spend Wise</h1><p style="font-size:14px;line-height:1.4;margin:0 0 10px">Atualize a pagina. Se continuar, envie este erro:</p><pre style="white-space:pre-wrap;font-size:12px;color:#fecaca">' + String(event.message || "Erro desconhecido").replace(/[<>&]/g, function (c) { return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c]; }) + '</pre></div></div>';
       });
       window.addEventListener("unhandledrejection", function (event) {
+        var msg = event.reason && (event.reason.message || event.reason.toString && event.reason.toString()) || "Falha inesperada";
+        if (recoverFromStaleChunk(msg)) return;
         var root = document.getElementById("root");
         if (!root || root.childElementCount) return;
-        var msg = event.reason && (event.reason.message || event.reason.toString && event.reason.toString()) || "Falha inesperada";
         root.innerHTML = '<div style="min-height:100vh;background:#0A0F1A;color:#e2e8f0;font-family:Arial,sans-serif;display:flex;align-items:center;justify-content:center;padding:24px"><div style="max-width:520px;border:1px solid rgba(248,113,113,.35);background:rgba(248,113,113,.08);border-radius:14px;padding:18px"><h1 style="font-size:20px;margin:0 0 8px;color:#F87171">Erro ao abrir o Spend Wise</h1><p style="font-size:14px;line-height:1.4;margin:0 0 10px">Atualize a pagina. Se continuar, envie este erro:</p><pre style="white-space:pre-wrap;font-size:12px;color:#fecaca">' + String(msg).replace(/[<>&]/g, function (c) { return {"<":"&lt;",">":"&gt;","&":"&amp;"}[c]; }) + '</pre></div></div>';
       });
     </script>

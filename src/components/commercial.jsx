@@ -46,6 +46,7 @@ function CommercialInsightsGrid({health, items, onOpen, light, theme}) {
       <div style={{height:6,borderRadius:99,background:"rgba(148,163,184,.16)",overflow:"hidden"}}>
         <div style={{width:health.score+"%",height:"100%",borderRadius:99,background:"linear-gradient(90deg,"+health.color+"99,"+health.color+")"}}/>
       </div>
+      {health.contextLabel&&<div style={{fontSize:10,color:theme.nav,marginTop:7,lineHeight:1.3}}>Perfil: {health.contextLabel}</div>}
     </div>
     {items.slice(0,3).map((item,idx)=>{const c=colors[item.tone]||colors.info;return <button key={idx} onClick={()=>onOpen(item.view)} style={{...cardBase(c),cursor:"pointer"}}>
       <div style={{display:"flex",alignItems:"center",gap:7,marginBottom:5}}>

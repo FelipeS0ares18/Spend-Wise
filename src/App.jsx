@@ -355,8 +355,8 @@ function App() {
     setShowQuickEntry,setShowRecurringForm,setShowShoppingForm,setSync
   });
 
-  const financeHealth=buildFinanceHealth({income,expense,balance,pending,monthTxs,goals,recurring});
-  const financeInsights=buildFinanceInsights({income,expense,balance,pending,monthTxs,recurring,goals,topCats,selMonth,selYear});
+  const financeHealth=buildFinanceHealth({income,expense,balance,pending,monthTxs,goals,recurring,onboardingAnswers});
+  const financeInsights=buildFinanceInsights({income,expense,balance,pending,monthTxs,recurring,goals,topCats,selMonth,selYear,onboardingAnswers});
   const onboardingSteps=[
     {id:"context",icon:"1",title:"Contexto financeiro",body:"Informe objetivo, renda e uso de cartao para personalizar o app.",done:!!(onboardingAnswers.mainGoal&&onboardingAnswers.incomeRange),view:"dashboard"},
     {id:"profile",icon:"2",title:"Completar perfil",body:"Nome e telefone ajudam no compartilhamento e no WhatsApp.",done:!!(profileName&&profileName.trim()),view:"profile"},

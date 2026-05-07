@@ -40,4 +40,42 @@ describe("financeMetrics", () => {
     expect(insights[0].title).toBe("Nenhuma conta vencendo nos proximos 7 dias");
     expect(insights.some(item => item.title === "Adicione uma receita do mes")).toBe(true);
   });
+
+  it("personalizes investment targets from onboarding answers", () => {
+    const insights = buildFinanceInsights({
+      income: 5000,
+      expense: 4300,
+      balance: 700,
+      monthTxs: [],
+      recurring: [],
+      goals: [],
+      topCats: [],
+      onboardingAnswers: { mainGoal: "investir" }
+    });
+
+    expect(insights[0].title).toBe("Falta margem para investir");
+    expect(insights[0].body).toContain("20%");
+  });
+
+  it("penalizes heavy card usage when the user reports installments", () => {
+    const base = {
+      income: 5000,
+      expense: 3000,
+      balance: 2000,
+      pending: 0,
+      monthTxs: [
+        { desc: "cartao mercado", date: "2026-05-01", type: "expense", paid: true },
+        { desc: "parcela celular", date: "2026-05-02", type: "expense", paid: true },
+        { desc: "credito farmacia", date: "2026-05-03", type: "expense", paid: true },
+        { desc: "salario", date: "2026-05-04", type: "income", paid: true }
+      ],
+      goals: [],
+      recurring: []
+    };
+
+    const neutral = buildFinanceHealth(base);
+    const cardProfile = buildFinanceHealth({ ...base, onboardingAnswers: { usesCards: "parcelas" } });
+
+    expect(cardProfile.score).toBeLessThan(neutral.score);
+  });
 });

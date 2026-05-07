@@ -408,7 +408,7 @@ function App() {
   };
   const importCtx={
     mobile,theme,light,importRows,importSaving,importFileName,setImportRows,setImportFileName,
-    setImportText,saveImportedRows,handleOfxFile,updateImportRow,removeImportRow,guessCategory
+    setImportText,saveImportedRows,handleOfxFile,updateImportRow,removeImportRow,guessCategory,householdId
   };
   const notificationsCtx={
     mobile,theme,light,notifEnabled,enableNotifications,monthTxs,dueRecurring

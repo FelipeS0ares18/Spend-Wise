@@ -169,5 +169,6 @@ const realFirebase = e2eFirebase
     })();
 const firebaseRuntime = (e2eFirebase || realFirebase)!;
 const { app, auth, authApi, db, fs } = firebaseRuntime;
+const firebaseMode = e2eFirebase ? "e2e" : "real";
 
-export { app, auth, authApi, db, fs };
+export { app, auth, authApi, db, firebaseMode, fs };

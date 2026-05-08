@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Btn, CATS } from "../components/appPrimitives";
-import { openBankConnect, syncBankConnection } from "../services/bankSyncService";
+import { diagnoseBankAuth, openBankConnect, syncBankConnection } from "../services/bankSyncService";
 
 const inputStyle = theme => ({
   background: "rgba(255,255,255,.07)",
@@ -54,6 +54,18 @@ export function ImportView({ ctx }) {
     } catch (e) {
       const setup = e.status === 412 ? " Configure os secrets PLUGGY_CLIENT_ID e PLUGGY_CLIENT_SECRET no Firebase Functions." : "";
       setBankStatus((e.message || "Erro ao conectar banco.") + setup);
+    }
+    setBankBusy(false);
+  }
+
+  async function diagnoseAuth() {
+    setBankBusy(true);
+    setBankStatus("Diagnosticando autenticacao bancaria...");
+    try {
+      const result = await diagnoseBankAuth(user);
+      setBankStatus(result);
+    } catch (e) {
+      setBankStatus(e.message || "Erro no diagnostico.");
     }
     setBankBusy(false);
   }
@@ -118,6 +130,9 @@ export function ImportView({ ctx }) {
             </button>
             <button onClick={syncLastBank} disabled={bankBusy || !lastBankItemId} style={{ border: "none", borderRadius: 9, padding: "10px 13px", background: "rgba(255,255,255,.06)", color: theme.nav, fontWeight: 700, cursor: bankBusy || !lastBankItemId ? "not-allowed" : "pointer", fontSize: 12 }}>
               Sincronizar ultimo banco
+            </button>
+            <button onClick={diagnoseAuth} disabled={bankBusy} style={{ border: "none", borderRadius: 9, padding: "10px 13px", background: "rgba(147,197,253,.12)", color: "#93C5FD", fontWeight: 700, cursor: bankBusy ? "wait" : "pointer", fontSize: 12 }}>
+              Diagnosticar
             </button>
           </div>
         </div>

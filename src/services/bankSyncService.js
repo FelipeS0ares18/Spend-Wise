@@ -1,4 +1,4 @@
-import { auth, authApi } from "./firebase";
+import { auth, authApi, firebaseMode } from "./firebase";
 
 const FUNCTIONS_BASE = "https://us-central1-appfinance-e6d2d.cloudfunctions.net";
 const PLUGGY_SCRIPT = "https://cdn.pluggy.ai/pluggy-connect/v2.7.0/pluggy-connect.js";
@@ -48,6 +48,33 @@ async function idToken(userOverride) {
 
   console.warn("Usuario sem getIdToken para integracao bancaria", { uid: user.uid, keys: Object.keys(user || {}) });
   throw new Error("Autenticacao bancaria indisponivel neste ambiente. Saia e entre novamente para renovar a sessao.");
+}
+
+async function diagnoseBankAuth(userOverride) {
+  const currentUser = await waitForCurrentUser();
+  const candidates = [currentUser, userOverride].filter(Boolean);
+  const lines = [
+    `modo=${firebaseMode}`,
+    `host=${window.location.hostname}`,
+    `auth.currentUser=${currentUser ? "sim" : "nao"}`,
+    `app.user=${userOverride ? "sim" : "nao"}`,
+    `current.getIdToken=${typeof currentUser?.getIdToken === "function" ? "sim" : "nao"}`,
+    `app.getIdToken=${typeof userOverride?.getIdToken === "function" ? "sim" : "nao"}`,
+    `authApi.getIdToken=${typeof authApi.getIdToken === "function" ? "sim" : "nao"}`
+  ];
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate.getIdToken !== "function") continue;
+    try {
+      const token = await candidate.getIdToken(true);
+      lines.push(`jwt=${isJwt(token) ? "sim" : "nao"}`);
+      lines.push(`uid=${candidate.uid || "sem-uid"}`);
+      return lines.join(" | ");
+    } catch (e) {
+      lines.push(`tokenErro=${e.code || e.message || "erro"}`);
+    }
+  }
+  lines.push(`uid=${currentUser?.uid || userOverride?.uid || "sem-uid"}`);
+  return lines.join(" | ");
 }
 
 async function callBankFunction(name, payload = {}, user) {
@@ -107,4 +134,4 @@ async function syncBankConnection({ householdId = "", itemId, user }) {
   return callBankFunction("syncBankConnection", { householdId, itemId }, user);
 }
 
-export { openBankConnect, syncBankConnection };
+export { diagnoseBankAuth, openBankConnect, syncBankConnection };

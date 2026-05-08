@@ -150,7 +150,11 @@ function createE2eFirebase() {
   };
 }
 
-const e2eFirebase = import.meta.env.VITE_E2E === "1" ? createE2eFirebase() : null;
+const isLocalE2e =
+  import.meta.env.VITE_E2E === "1" &&
+  typeof window !== "undefined" &&
+  ["localhost", "127.0.0.1", "::1"].includes(window.location.hostname);
+const e2eFirebase = isLocalE2e ? createE2eFirebase() : null;
 const realFirebase = e2eFirebase
   ? null
   : (() => {

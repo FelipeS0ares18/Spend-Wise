@@ -1,4 +1,4 @@
-import { auth } from "./firebase";
+import { auth, authApi } from "./firebase";
 
 const FUNCTIONS_BASE = "https://us-central1-appfinance-e6d2d.cloudfunctions.net";
 const PLUGGY_SCRIPT = "https://cdn.pluggy.ai/pluggy-connect/v2.7.0/pluggy-connect.js";
@@ -9,6 +9,14 @@ async function idToken(userOverride) {
       ? auth.currentUser
       : userOverride;
   if (!user) throw new Error("Faca login para conectar bancos.");
+  if (typeof authApi.getIdToken === "function") {
+    try {
+      return await authApi.getIdToken(user, true);
+    } catch (e) {
+      if (auth.currentUser && auth.currentUser !== user) return authApi.getIdToken(auth.currentUser, true);
+      throw e;
+    }
+  }
   if (typeof user.getIdToken === "function") return user.getIdToken(true);
   if (user.accessToken) return user.accessToken;
   if (user.stsTokenManager?.accessToken) return user.stsTokenManager.accessToken;

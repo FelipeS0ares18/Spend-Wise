@@ -4,10 +4,16 @@ const FUNCTIONS_BASE = "https://us-central1-appfinance-e6d2d.cloudfunctions.net"
 const PLUGGY_SCRIPT = "https://cdn.pluggy.ai/pluggy-connect/v2.7.0/pluggy-connect.js";
 
 async function idToken(userOverride) {
-  const user = userOverride || auth.currentUser;
+  const user =
+    auth.currentUser && typeof auth.currentUser.getIdToken === "function"
+      ? auth.currentUser
+      : userOverride;
   if (!user) throw new Error("Faca login para conectar bancos.");
-  if (typeof user.getIdToken !== "function") throw new Error("Autenticacao bancaria indisponivel neste ambiente.");
-  return user.getIdToken();
+  if (typeof user.getIdToken === "function") return user.getIdToken(true);
+  if (user.accessToken) return user.accessToken;
+  if (user.stsTokenManager?.accessToken) return user.stsTokenManager.accessToken;
+  console.warn("Usuario sem getIdToken para integracao bancaria", { uid: user.uid, keys: Object.keys(user || {}) });
+  throw new Error("Autenticacao bancaria indisponivel neste ambiente. Saia e entre novamente para renovar a sessao.");
 }
 
 async function callBankFunction(name, payload = {}, user) {

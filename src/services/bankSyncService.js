@@ -3,23 +3,49 @@ import { auth, authApi } from "./firebase";
 const FUNCTIONS_BASE = "https://us-central1-appfinance-e6d2d.cloudfunctions.net";
 const PLUGGY_SCRIPT = "https://cdn.pluggy.ai/pluggy-connect/v2.7.0/pluggy-connect.js";
 
+function isJwt(token) {
+  return typeof token === "string" && token.split(".").length === 3;
+}
+
+function waitForCurrentUser() {
+  if (auth.currentUser) return Promise.resolve(auth.currentUser);
+  return new Promise(resolve => {
+    const unsub = authApi.onAuthStateChanged(auth, user => {
+      unsub?.();
+      resolve(user || null);
+    });
+  });
+}
+
 async function idToken(userOverride) {
-  const user =
-    auth.currentUser && typeof auth.currentUser.getIdToken === "function"
-      ? auth.currentUser
-      : userOverride;
+  const currentUser = await waitForCurrentUser();
+  const candidates = [currentUser, userOverride].filter(Boolean);
+  const sdkTokenUser = candidates.find(user => typeof user.getIdToken === "function");
+  const user = sdkTokenUser || candidates[0];
   if (!user) throw new Error("Faca login para conectar bancos.");
-  if (typeof authApi.getIdToken === "function") {
-    try {
-      return await authApi.getIdToken(user, true);
-    } catch (e) {
-      if (auth.currentUser && auth.currentUser !== user) return authApi.getIdToken(auth.currentUser, true);
-      throw e;
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    if (typeof authApi.getIdToken === "function" && typeof candidate.getIdToken === "function") {
+      try {
+        const token = await authApi.getIdToken(candidate, true);
+        if (isJwt(token)) return token;
+      } catch (e) {
+        console.warn("Falha ao obter ID token pelo SDK", e);
+      }
     }
+    if (typeof candidate.getIdToken === "function") {
+      try {
+        const token = await candidate.getIdToken(true);
+        if (isJwt(token)) return token;
+      } catch (e) {
+        console.warn("Falha ao obter ID token pelo usuario", e);
+      }
+    }
+    if (isJwt(candidate.accessToken)) return candidate.accessToken;
+    if (isJwt(candidate.stsTokenManager?.accessToken)) return candidate.stsTokenManager.accessToken;
   }
-  if (typeof user.getIdToken === "function") return user.getIdToken(true);
-  if (user.accessToken) return user.accessToken;
-  if (user.stsTokenManager?.accessToken) return user.stsTokenManager.accessToken;
+
   console.warn("Usuario sem getIdToken para integracao bancaria", { uid: user.uid, keys: Object.keys(user || {}) });
   throw new Error("Autenticacao bancaria indisponivel neste ambiente. Saia e entre novamente para renovar a sessao.");
 }

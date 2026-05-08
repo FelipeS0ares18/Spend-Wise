@@ -28,7 +28,8 @@ export function ImportView({ ctx }) {
     updateImportRow,
     removeImportRow,
     guessCategory,
-    householdId
+    householdId,
+    user
   } = ctx;
   const [bankBusy, setBankBusy] = useState(false);
   const [bankStatus, setBankStatus] = useState("");
@@ -40,6 +41,7 @@ export function ImportView({ ctx }) {
     try {
       await openBankConnect({
         householdId,
+        user,
         onSuccess: result => {
           if (result.itemId) {
             localStorage.setItem("spend-wise-last-bank-item", result.itemId);
@@ -64,7 +66,7 @@ export function ImportView({ ctx }) {
     setBankBusy(true);
     setBankStatus("Sincronizando transacoes do banco...");
     try {
-      const result = await syncBankConnection({ householdId, itemId: lastBankItemId });
+      const result = await syncBankConnection({ householdId, itemId: lastBankItemId, user });
       setBankStatus(`${result.imported || 0} transacao(oes) sincronizada(s) de ${result.accountsCount || 0} conta(s).`);
     } catch (e) {
       setBankStatus(e.message || "Erro ao sincronizar banco.");
